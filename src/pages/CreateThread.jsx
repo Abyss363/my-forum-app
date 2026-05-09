@@ -2,6 +2,7 @@ import { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import FileUpload from "../components/FileUpload";
+import ThreadSearch from "../components/ThreadSearch";
 
 function CreateThread({ userProfile, user, onBack }) {
   const [title, setTitle] = useState("");
@@ -11,6 +12,8 @@ function CreateThread({ userProfile, user, onBack }) {
   const [attachmentFile, setAttachmentFile] = useState(null);
   const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const UPLOAD_PRESET = "aju_forum_uploads";
+  const [showThreadSearch, setShowThreadSearch] = useState(false);
+  const [referencedThread, setReferencedThread] = useState(null);
 
   async function uploadToCloudinary(file) {
     const isImage = file.type.startsWith("image/");
@@ -55,6 +58,7 @@ function CreateThread({ userProfile, user, onBack }) {
         createdAt: serverTimestamp(),
         pinned: false,
         attachment: attachment,
+        referencedThread: referencedThread,
       });
       onBack();
     } catch (err) {
@@ -99,6 +103,39 @@ function CreateThread({ userProfile, user, onBack }) {
             className="w-full border border-gray-300 rounded-lg p-3 mb-6 outline-none focus:border-blue-500 resize-none"
           />
           <FileUpload onFileSelected={(file) => setAttachmentFile(file)} />
+
+          {!showThreadSearch && (
+            <button
+              onClick={() => setShowThreadSearch(true)}
+              className="w-full border-2 border-dashed border-blue-300 text-blue-500 font-bold py-2 rounded-lg hover:bg-blue-50 transition-colors duration-200 mb-4"
+            >
+              📎 Reference a Thread
+            </button>
+          )}
+
+          {showThreadSearch && (
+            <ThreadSearch
+              onSelect={(thread) => {
+                setReferencedThread(thread);
+                setShowThreadSearch(false);
+              }}
+              onClose={() => setShowThreadSearch(false)}
+            />
+          )}
+
+          {referencedThread && (
+            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <span className="text-sm text-blue-700 font-bold line-clamp-1">
+                📎 {referencedThread.title}
+              </span>
+              <button
+                onClick={() => setReferencedThread(null)}
+                className="text-gray-400 hover:text-red-400 font-bold ml-2"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           <button
             onClick={handleCreate}

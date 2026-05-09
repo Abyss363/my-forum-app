@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import Footer from "../components/Footer";
+import ThreadSearch from "../components/ThreadSearch";
 
 function ThreadPage({ userProfile, user }) {
   const { threadId } = useParams();
@@ -26,6 +27,8 @@ function ThreadPage({ userProfile, user }) {
   const [replyBody, setReplyBody] = useState("");
   const [replyError, setReplyError] = useState("");
   const [replyLoading, setReplyLoading] = useState(false);
+  const [showThreadSearch, setShowThreadSearch] = useState(false);
+  const [referencedThread, setReferencedThread] = useState(null);
 
   useEffect(() => {
     async function fetchThread() {
@@ -68,9 +71,11 @@ function ThreadPage({ userProfile, user }) {
         authorId: user.uid,
         createdAt: serverTimestamp(),
         upvotes: 0,
+        referencedThread: referencedThread,
       });
       setReplyBody("");
       setReplyError("");
+      setReferencedThread(null);
     } catch (err) {
       setReplyError(err.message);
     }
@@ -159,6 +164,19 @@ function ThreadPage({ userProfile, user }) {
               )}
             </div>
           )}
+          {thread.referencedThread && (
+            <div
+              onClick={() => navigate(`/thread/${thread.referencedThread.id}`)}
+              className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 cursor-pointer hover:bg-blue-100 transition-colors duration-200"
+            >
+              <span className="text-blue-500 font-bold text-sm">
+                📎 Related Thread:
+              </span>
+              <span className="text-blue-700 text-sm font-bold line-clamp-1">
+                {thread.referencedThread.title}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between items-center text-xs text-gray-400 border-t pt-4">
             <span>
               Posted by{" "}
@@ -197,6 +215,21 @@ function ThreadPage({ userProfile, user }) {
                 <p className="text-gray-700 mb-4 leading-relaxed">
                   {reply.body}
                 </p>
+                {reply.referencedThread && (
+                  <div
+                    onClick={() =>
+                      navigate(`/thread/${reply.referencedThread.id}`)
+                    }
+                    className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 cursor-pointer hover:bg-blue-100 transition-colors duration-200"
+                  >
+                    <span className="text-blue-500 font-bold text-sm">
+                      📎 Related Thread:
+                    </span>
+                    <span className="text-blue-700 text-sm font-bold line-clamp-1">
+                      {reply.referencedThread.title}
+                    </span>
+                  </div>
+                )}
                 <button
                   onClick={() => handleUpvote(reply)}
                   disabled={reply.authorId === user.uid}
@@ -262,6 +295,39 @@ function ThreadPage({ userProfile, user }) {
               rows={4}
               className="w-full border border-gray-300 rounded-lg p-3 mb-3 outline-none focus:border-blue-500 resize-none"
             />
+
+            {!showThreadSearch && (
+              <button
+                onClick={() => setShowThreadSearch(true)}
+                className="w-full border-2 border-dashed border-blue-300 text-blue-500 font-bold py-2 rounded-lg hover:bg-blue-50 transition-colors duration-200 mb-3"
+              >
+                📎 Reference a Thread
+              </button>
+            )}
+
+            {showThreadSearch && (
+              <ThreadSearch
+                onSelect={(thread) => {
+                  setReferencedThread(thread);
+                  setShowThreadSearch(false);
+                }}
+                onClose={() => setShowThreadSearch(false)}
+              />
+            )}
+
+            {referencedThread && (
+              <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                <span className="text-sm text-blue-700 font-bold line-clamp-1">
+                  📎 {referencedThread.title}
+                </span>
+                <button
+                  onClick={() => setReferencedThread(null)}
+                  className="text-gray-400 hover:text-red-400 font-bold ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             <button
               onClick={handleReply}
