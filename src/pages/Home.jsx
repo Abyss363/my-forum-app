@@ -196,6 +196,13 @@ function Home({ userProfile, user }) {
                 <p className="text-gray-500 text-sm mb-3 line-clamp-2">
                   {thread.body}
                 </p>
+                {thread.attachment && (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-500 mb-3">
+                    {thread.attachment.type === "image"
+                      ? "🖼️ Image attached"
+                      : "📄 PDF attached"}
+                  </span>
+                )}
                 <div className="flex justify-between items-center text-xs text-gray-400">
                   <span>
                     Posted by{" "}
