@@ -8,7 +8,27 @@ function CreateThread({ userProfile, user, onBack }) {
   const [body, setBody] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [attachment, setAttachment] = useState(null);
+  const [attachmentFile, setAttachmentFile] = useState(null);
+  const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const UPLOAD_PRESET = "aju_forum_uploads";
+
+  async function uploadToCloudinary(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
+      { method: "POST", body: formData },
+    );
+    const data = await response.json();
+    return {
+      url: data.secure_url,
+      type: file.type.startsWith("image/") ? "image" : "pdf",
+      name: file.name,
+      publicId: data.public_id,
+    };
+  }
 
   async function handleCreate() {
     if (!title.trim() || !body.trim()) {
@@ -18,6 +38,11 @@ function CreateThread({ userProfile, user, onBack }) {
 
     setLoading(true);
     try {
+      let attachment = null;
+      if (attachmentFile) {
+        attachment = await uploadToCloudinary(attachmentFile);
+      }
+
       await addDoc(collection(db, "threads"), {
         title: title,
         body: body,
@@ -70,7 +95,7 @@ function CreateThread({ userProfile, user, onBack }) {
             rows={6}
             className="w-full border border-gray-300 rounded-lg p-3 mb-6 outline-none focus:border-blue-500 resize-none"
           />
-          <FileUpload onUploadComplete={(file) => setAttachment(file)} />
+          <FileUpload onFileSelected={(file) => setAttachmentFile(file)} />
 
           <button
             onClick={handleCreate}

@@ -1,13 +1,11 @@
 import { useState } from "react";
 
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = "aju_forum_uploads";
-
-function FileUpload({ onUploadComplete }) {
-  const [uploading, setUploading] = useState(false);
+function FileUpload({ onFileSelected }) {
   const [error, setError] = useState("");
+  const [preview, setPreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  async function handleFileChange(e) {
+  function handleFileChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -25,35 +23,24 @@ function FileUpload({ onUploadComplete }) {
     }
 
     setError("");
-    setUploading(true);
+    setSelectedFile(file);
+    onFileSelected(file);
 
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", UPLOAD_PRESET);
-
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
-        { method: "POST", body: formData },
-      );
-
-      const data = await response.json();
-
-      if (data.secure_url) {
-        onUploadComplete({
-          url: data.secure_url,
-          type: isImage ? "image" : "pdf",
-          name: file.name,
-          publicId: data.public_id,
-        });
-      } else {
-        setError("Upload failed. Please try again.");
-      }
-    } catch (err) {
-      setError("Upload failed. Please try again.");
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onload = (e) =>
+        setPreview({ type: "image", url: e.target.result });
+      reader.readAsDataURL(file);
+    } else {
+      setPreview({ type: "pdf", name: file.name });
     }
+  }
 
-    setUploading(false);
+  function handleClear() {
+    setSelectedFile(null);
+    setPreview(null);
+    setError("");
+    onFileSelected(null);
   }
 
   return (
@@ -61,14 +48,38 @@ function FileUpload({ onUploadComplete }) {
       <label className="block text-sm font-bold text-gray-600 mb-2">
         Attach a File (Image or PDF, max 10MB)
       </label>
-      <input
-        type="file"
-        accept="image/*,.pdf"
-        onChange={handleFileChange}
-        disabled={uploading}
-        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-bold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer"
-      />
-      {uploading && <p className="text-blue-500 text-sm mt-2">Uploading...</p>}
+
+      {!selectedFile ? (
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          onChange={handleFileChange}
+          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-bold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer"
+        />
+      ) : (
+        <div className="border border-gray-200 rounded-lg p-3">
+          {preview?.type === "image" && (
+            <img
+              src={preview.url}
+              alt="Preview"
+              className="max-h-48 rounded-lg object-contain mb-2"
+            />
+          )}
+          {preview?.type === "pdf" && (
+            <div className="flex items-center gap-2 text-gray-600 mb-2">
+              <span className="text-2xl">📄</span>
+              <span className="text-sm font-bold">{preview.name}</span>
+            </div>
+          )}
+          <button
+            onClick={handleClear}
+            className="text-red-500 text-sm hover:underline"
+          >
+            ✕ Remove file
+          </button>
+        </div>
+      )}
+
       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
     </div>
   );
