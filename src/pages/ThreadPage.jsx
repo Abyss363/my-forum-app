@@ -143,10 +143,7 @@ function ThreadPage({ userProfile, user }) {
                 />
               ) : (
                 <a
-                  href={thread.attachment.url.replace(
-                    "/image/upload/",
-                    "/raw/upload/",
-                  )}
+                  href={thread.attachment.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4 hover:bg-gray-100 transition-colors duration-200"

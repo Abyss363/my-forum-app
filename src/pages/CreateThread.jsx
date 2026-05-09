@@ -14,7 +14,7 @@ function CreateThread({ userProfile, user, onBack }) {
 
   async function uploadToCloudinary(file) {
     const isImage = file.type.startsWith("image/");
-    const resourceType = isImage ? "image" : "raw";
+    const resourceType = "auto";
 
     const formData = new FormData();
     formData.append("file", file);
