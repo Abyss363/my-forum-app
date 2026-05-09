@@ -65,18 +65,15 @@ function ThreadPage({ userProfile, user }) {
     }
 
     async function handleUpvote(reply) {
-        const replyRef = doc(db, 'threads', threadId, 'replies', reply.id)
-        const alreadyUpvoted = reply.upvotedBy?.includes(user.uid)
+  if (reply.authorId === user.uid) return
 
-        if (reply.authorId === user.uid) {
-            return
-        }
+  const replyRef = doc(db, 'threads', threadId, 'replies', reply.id)
+  const alreadyUpvoted = reply.upvotedBy?.includes(user.uid)
 
-        await updateDoc(replyRef, {
-            upvotes: alreadyUpvoted ? reply.upvotes - 1 : reply.upvotes + 1,
-            upvotedBy: alreadyUpvoted ? arrayRemove(user.uid) : arrayUnion(user.uid)
-        })
-    }
+  await updateDoc(replyRef, {
+    upvotedBy: alreadyUpvoted ? arrayRemove(user.uid) : arrayUnion(user.uid)
+  })
+}
 
     async function handleDeleteReply(replyId) {
         if (window.confirm('Are you sure you want to delete this reply?')) {
@@ -164,7 +161,7 @@ function ThreadPage({ userProfile, user }) {
                                             ${reply.authorId === user.uid
                                             ? 'opacity-40 cursor-not-allowed'
                                             : 'cursor-pointer'}`}>
-                                    👍 <span>{reply.upvotes || 0}</span>
+                                    👍 <span>{reply.upvotedBy?.length || 0}</span>
                                 </button>
                                 <div className="flex justify-between items-center text-xs text-gray-400 border-t pt-3 mt-3 gap-2">
                                     <span>
