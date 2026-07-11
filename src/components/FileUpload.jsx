@@ -45,7 +45,7 @@ function FileUpload({ onFileSelected }) {
 
   return (
     <div className="mb-4">
-      <label className="block text-sm font-bold text-gray-600 mb-2">
+      <label className="block text-sm font-bold text-[#8b92a5] mb-2">
         Attach a File (Image or PDF, max 10MB)
       </label>
 
@@ -54,10 +54,10 @@ function FileUpload({ onFileSelected }) {
           type="file"
           accept="image/*,.pdf"
           onChange={handleFileChange}
-          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-bold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 cursor-pointer"
+          className="w-full text-sm text-[#8b92a5] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-bold file:bg-blue-900/40 file:text-blue-400 hover:file:bg-blue-900/60 cursor-pointer"
         />
       ) : (
-        <div className="border border-gray-200 rounded-lg p-3">
+        <div className="border border-[#2a2d3a] rounded-lg p-3 bg-[#0f1117]">
           {preview?.type === "image" && (
             <img
               src={preview.url}
@@ -66,21 +66,21 @@ function FileUpload({ onFileSelected }) {
             />
           )}
           {preview?.type === "pdf" && (
-            <div className="flex items-center gap-2 text-gray-600 mb-2">
+            <div className="flex items-center gap-2 text-[#8b92a5] mb-2">
               <span className="text-2xl">📄</span>
               <span className="text-sm font-bold">{preview.name}</span>
             </div>
           )}
           <button
             onClick={handleClear}
-            className="text-red-500 text-sm hover:underline"
+            className="text-rose-400 text-sm hover:underline transition-colors duration-200"
           >
             ✕ Remove file
           </button>
         </div>
       )}
 
-      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+      {error && <p className="text-rose-400 text-sm mt-2">{error}</p>}
     </div>
   );
 }

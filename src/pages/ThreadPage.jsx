@@ -13,10 +13,12 @@ import {
   arrayUnion,
   arrayRemove,
   deleteDoc,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import Footer from "../components/Footer";
 import ThreadSearch from "../components/ThreadSearch";
+import createNotification from "../components/createNotification";
 
 function ThreadPage({ userProfile, user }) {
   const { threadId } = useParams();
@@ -29,13 +31,27 @@ function ThreadPage({ userProfile, user }) {
   const [replyLoading, setReplyLoading] = useState(false);
   const [showThreadSearch, setShowThreadSearch] = useState(false);
   const [referencedThread, setReferencedThread] = useState(null);
+  const [rooms, setRooms] = useState([]);
 
   useEffect(() => {
     async function fetchThread() {
       const docRef = doc(db, "threads", threadId);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setThread({ id: docSnap.id, ...docSnap.data() });
+        const threadData = { id: docSnap.id, ...docSnap.data() };
+
+        if (threadData.roomId) {
+          const roomRef = doc(db, "rooms", threadData.roomId);
+          const roomSnap = await getDoc(roomRef);
+          if (roomSnap.exists()) {
+            const roomData = roomSnap.data();
+            if (!roomData.members?.includes(user.uid)) {
+              navigate("/");
+              return;
+            }
+          }
+        }
+        setThread(threadData);
       }
       setLoading(false);
     }
@@ -57,6 +73,18 @@ function ThreadPage({ userProfile, user }) {
     return () => unsubscribe();
   }, [threadId]);
 
+  useEffect(() => {
+    async function fetchRooms() {
+      const snapshot = await getDocs(collection(db, "rooms"));
+      const roomList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setRooms(roomList);
+    }
+    fetchRooms();
+  }, []);
+
   async function handleReply() {
     if (!replyBody.trim()) {
       setReplyError("Reply cannot be empty.");
@@ -73,6 +101,13 @@ function ThreadPage({ userProfile, user }) {
         upvotes: 0,
         referencedThread: referencedThread,
       });
+      if (thread.authorId !== user.uid) {
+        await createNotification({
+          userId: thread.authorId,
+          message: `${userProfile.displayName} replied to your thread "${thread.title}"`,
+          threadId: threadId,
+        });
+      }
       setReplyBody("");
       setReplyError("");
       setReferencedThread(null);
@@ -116,28 +151,32 @@ function ThreadPage({ userProfile, user }) {
   }
 
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col">
-      <nav className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-blue-700">🎓 AJUFORUM</h1>
+    <div className="min-h-screen bg-[#0f1117] flex flex-col">
+      <nav className="bg-[#1a1d27] border-b border-[#2a2d3a] px-6 py-4 flex justify-between items-center">
+        <h1 className="text-xl font-bold tracking-widest uppercase bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+          🎓 AJU Forum
+        </h1>
         <button
           onClick={() => navigate("/")}
-          className="text-blue-600 font-bold hover:underline"
+          className="text-blue-400 font-bold hover:text-blue-300 transition-colors duration-200"
         >
           🔙 Back
         </button>
       </nav>
 
       <div className="max-w-3xl mx-auto px-4 py-8 flex-1 w-full">
-        <div className="bg-white rounded-2xl shadow p-6 mb-6">
+        <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-2xl p-6 mb-6">
           <div className="flex justify-between items-start mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">{thread.title}</h2>
+            <h2 className="text-2xl font-bold text-[#e2e8f0]">
+              {thread.title}
+            </h2>
             {thread.pinned && (
               <span className="text-xs bg-yellow-100 text-yellow-700 font-bold px-2 py-1 rounded-full">
                 📌 Pinned
               </span>
             )}
           </div>
-          <p className="text-gray-700 mb-6 leading-relaxed">{thread.body}</p>
+          <p className="text-[#8b92a5] mb-6 leading-relaxed">{thread.body}</p>
           {thread.attachment && (
             <div className="mb-6">
               {thread.attachment.type === "image" ? (
@@ -151,11 +190,11 @@ function ThreadPage({ userProfile, user }) {
                   href={thread.attachment.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4 hover:bg-gray-100 transition-colors duration-200"
+                  className="flex items-center gap-3 bg-[#0f1117] border border-[#2a2d3a] rounded-xl p-4 hover:border-blue-800 transition-colors duration-200"
                 >
                   <span className="text-4xl">📄</span>
                   <div>
-                    <p className="font-bold text-gray-700">
+                    <p className="font-bold text-[#e2e8f0]">
                       {thread.attachment.name}
                     </p>
                     <p className="text-sm text-blue-500">Click to open PDF</p>
@@ -167,7 +206,7 @@ function ThreadPage({ userProfile, user }) {
           {thread.referencedThread && (
             <div
               onClick={() => navigate(`/thread/${thread.referencedThread.id}`)}
-              className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 cursor-pointer hover:bg-blue-100 transition-colors duration-200"
+              className="flex items-center gap-2 bg-blue-900/20 border border-blue-800 rounded-lg p-3 mb-4 cursor-pointer hover:bg-blue-900/30 transition-colors duration-200"
             >
               <span className="text-blue-500 font-bold text-sm">
                 📎 Related Thread:
@@ -177,11 +216,17 @@ function ThreadPage({ userProfile, user }) {
               </span>
             </div>
           )}
-          <div className="flex justify-between items-center text-xs text-gray-400 border-t pt-4">
+          <div className="flex justify-between items-center text-xs text-[#4a5066] border-t border-[#2a2d3a] pt-4">
             <span>
               Posted by{" "}
               <span
-                className={`font-bold ${thread.authorRole === "lecturer" ? "text-green-600" : "text-blue-600"}`}
+                className={`font-bold ${
+                  thread.authorRole === "lecturer"
+                    ? "text-emerald-400"
+                    : thread.authorRole === "admin"
+                      ? "text-purple-400"
+                      : "text-blue-400"
+                }`}
               >
                 {thread.authorName}
               </span>
@@ -198,21 +243,21 @@ function ThreadPage({ userProfile, user }) {
         </div>
 
         <div className="flex flex-col gap-4">
-          <h3 className="text-lg font-bold text-gray-700">
+          <h3 className="text-lg font-bold text-[#e2e8f0]">
             {replies.length} {replies.length === 1 ? "Reply" : "Replies"}
           </h3>
 
           {replies.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow p-6 text-center text-gray-400">
+            <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-2xl p-6 text-center text-[#4a5066]">
               No replies yet. Be the first to reply!
             </div>
           ) : (
             replies.map((reply) => (
               <div
                 key={reply.id}
-                className="bg-white rounded-2xl shadow p-6 relative"
+                className="bg-[#1a1d27] border border-[#2a2d3a] rounded-2xl p-6 relative"
               >
-                <p className="text-gray-700 mb-4 leading-relaxed">
+                <p className="text-[#8b92a5] mb-4 leading-relaxed">
                   {reply.body}
                 </p>
                 {reply.referencedThread && (
@@ -233,26 +278,32 @@ function ThreadPage({ userProfile, user }) {
                 <button
                   onClick={() => handleUpvote(reply)}
                   disabled={reply.authorId === user.uid}
-                  className={`flex items-center gap-2 text-sm font-bold py-1 px-4 rounded-full transition-colors duration-400
-                                            ${
-                                              reply.upvotedBy?.includes(
-                                                user.uid,
-                                              )
-                                                ? "bg-blue-600 text-white hover:bg-blue-700"
-                                                : "bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50"
-                                            }
-                                            ${
-                                              reply.authorId === user.uid
-                                                ? "opacity-40 cursor-not-allowed"
-                                                : "cursor-pointer"
-                                            }`}
+                  className={`flex items-center gap-2 text-sm font-bold py-1 px-4 rounded-full transition-colors duration-200
+  ${
+    reply.upvotedBy?.includes(user.uid)
+      ? "bg-blue-600 text-white hover:bg-blue-700"
+      : "bg-transparent text-blue-400 border-2 border-blue-800 hover:bg-blue-900/20"
+  }
+  ${
+    reply.authorId === user.uid
+      ? "opacity-40 cursor-not-allowed"
+      : "cursor-pointer"
+  }`}
                 >
                   👍 <span>{reply.upvotedBy?.length || 0}</span>
                 </button>
-                <div className="flex justify-between items-center text-xs text-gray-400 border-t pt-3 mt-3 gap-2">
+                <div className="flex justify-between items-center text-xs text-[#4a5066] border-t border-[#2a2d3a] pt-3 mt-3 gap-2">
                   <span>
                     <span
-                      className={`font-bold ${reply.authorRole === "lecturer" ? "text-green-600" : "text-blue-600"}`}
+                      className={`font-bold ${
+                        reply.authorRole === "lecturer"
+                          ? "text-emerald-400"
+                          : reply.authorRole === "admin"
+                            ? "text-purple-400"
+                            : reply.authorRole === "manager"
+                              ? "text-amber-400"
+                              : "text-blue-400"
+                      }`}
                     >
                       {reply.authorName}
                     </span>
@@ -280,9 +331,9 @@ function ThreadPage({ userProfile, user }) {
             ))
           )}
 
-          <div className="bg-white rounded-2xl shadow p-6">
-            <h4 className="text-md font-bold text-gray-700 mb-3">
-              Post a Reply
+          <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-2xl p-6">
+            <h4 className="text-md font-bold text-[#e2e8f0] mb-3">
+              Post a Reply Post a Reply
             </h4>
             {replyError && (
               <p className="text-red-500 text-sm mb-3">{replyError}</p>
@@ -293,13 +344,13 @@ function ThreadPage({ userProfile, user }) {
               value={replyBody}
               onChange={(e) => setReplyBody(e.target.value)}
               rows={4}
-              className="w-full border border-gray-300 rounded-lg p-3 mb-3 outline-none focus:border-blue-500 resize-none"
+              className="w-full border border-[#2a2d3a] rounded-lg p-3 mb-3 outline-none focus:border-blue-500 resize-none bg-[#0f1117] text-[#e2e8f0]"
             />
 
             {!showThreadSearch && (
               <button
                 onClick={() => setShowThreadSearch(true)}
-                className="w-full border-2 border-dashed border-blue-300 text-blue-500 font-bold py-2 rounded-lg hover:bg-blue-50 transition-colors duration-200 mb-3"
+                className="w-full border-2 border-dashed border-blue-800 text-blue-400 font-bold py-2 rounded-lg hover:bg-blue-900/20 transition-colors duration-200 mb-3"
               >
                 📎 Reference a Thread
               </button>
@@ -312,12 +363,14 @@ function ThreadPage({ userProfile, user }) {
                   setShowThreadSearch(false);
                 }}
                 onClose={() => setShowThreadSearch(false)}
+                user={user}
+                rooms={rooms}
               />
             )}
 
             {referencedThread && (
-              <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                <span className="text-sm text-blue-700 font-bold line-clamp-1">
+              <div className="flex items-center justify-between bg-blue-900/20 border border-blue-800 rounded-lg p-3 mb-3">
+                <span className="text-sm text-blue-300 font-bold line-clamp-1">
                   📎 {referencedThread.title}
                 </span>
                 <button
