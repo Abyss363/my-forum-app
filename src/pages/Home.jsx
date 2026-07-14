@@ -28,7 +28,7 @@ function Home({ userProfile, user }) {
   const [passwordError, setPasswordError] = useState("");
   const [pendingRoom, setPendingRoom] = useState(null);
   const [roomMembers, setRoomMembers] = useState([]);
-  const [showSidebar, setShowSidebar] = useState(false)
+  const [showSidebar, setShowSidebar] = useState(false);
 
   useEffect(() => {
     const constraints = [
@@ -145,13 +145,13 @@ function Home({ userProfile, user }) {
   }
 
   async function handleRoomClick(room) {
-  setShowSidebar(false)
-  if (room.members?.includes(user.uid)) {
-    setActiveTab(room.id)
-    return
+    setShowSidebar(false);
+    if (room.members?.includes(user.uid)) {
+      setActiveTab(room.id);
+      return;
+    }
+    setPendingRoom(room);
   }
-  setPendingRoom(room)
-}
 
   async function handleJoinRoom() {
     if (pendingRoom.isPasswordProtected) {
@@ -203,19 +203,19 @@ function Home({ userProfile, user }) {
 
   return (
     <div className="min-h-screen bg-[#0f1117] flex flex-col">
-      <nav className="bg-[#1a1d27] border-b border-[#2a2d3a] px-6 py-4 flex justify-between items-center">
-<div className="flex items-center gap-3">
-  <button
-    onClick={() => setShowSidebar(true)}
-    className="md:hidden text-[#8b92a5] hover:text-blue-400 transition-colors duration-200"
-  >
-    <span className="text-2xl">☰</span>
-  </button>
-        <h1 className="text-xl font-bold tracking-widest uppercase bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-          🎓 AJU Forum
-        </h1>
-</div>
-        <div className="flex items-center gap-4">
+      <nav className="bg-[#1a1d27] border-b border-[#2a2d3a] px-6 py-4 flex justify-between items-center gap-4 overflow-x-auto">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowSidebar(true)}
+            className="md:hidden text-[#8b92a5] hover:text-blue-400 transition-colors duration-200"
+          >
+            <span className="text-2xl">☰</span>
+          </button>
+          <h1 className="text-xl font-bold tracking-widest uppercase bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+            🎓 AJU Forum
+          </h1>
+        </div>
+        <div className="flex items-center gap-4 flex-shrink-0 whitespace-nowrap">
           <span className="text-gray-600 text-sm">
             {userProfile.displayName}{" "}
             <span className="text-[#8b92a5] text-sm">
@@ -255,24 +255,31 @@ function Home({ userProfile, user }) {
 
       <div className="flex flex-row flex-1 overflow-hidden">
         {/* Left sidebar — rooms list */}
-        <div className={`fixed md:static inset-y-0 left-0 z-40 w-64 flex-shrink-0 min-h-full bg-[#1a1d27] border-r border-[#2a2d3a] p-4 transform transition-transform duration-200 overflow-y-auto
-  ${showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-  <div className="flex justify-between items-center mb-4 md:hidden">
-    <span className="text-xs font-bold text-[#8b92a5] uppercase tracking-widest">Menu</span>
-    <button
-      onClick={() => setShowSidebar(false)}
-      className="text-[#8b92a5] hover:text-rose-400 text-xl font-bold transition-colors duration-200"
-    >
-      ✕
-    </button>
-  </div>
+        <div
+          className={`fixed md:static inset-y-0 left-0 z-40 w-64 flex-shrink-0 min-h-full bg-[#1a1d27] border-r border-[#2a2d3a] p-4 transform transition-transform duration-200 overflow-y-auto
+  ${showSidebar ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+        >
+          <div className="flex justify-between items-center mb-4 md:hidden">
+            <span className="text-xs font-bold text-[#8b92a5] uppercase tracking-widest">
+              Menu
+            </span>
+            <button
+              onClick={() => setShowSidebar(false)}
+              className="text-[#8b92a5] hover:text-rose-400 text-xl font-bold transition-colors duration-200"
+            >
+              ✕
+            </button>
+          </div>
           <h3 className="font-bold text-[#8b92a5] mb-3 text-xs uppercase tracking-widest">
             💬 Spaces
           </h3>
 
           {/* General tab */}
           <div
-            onClick={() => { setActiveTab("general"); setShowSidebar(false) }}
+            onClick={() => {
+              setActiveTab("general");
+              setShowSidebar(false);
+            }}
             className={`flex items-center gap-2 p-3 rounded-xl cursor-pointer mb-2 transition-colors duration-200
   ${activeTab === "general" ? "bg-blue-600 text-white" : "hover:bg-[#2a2d3a] text-[#8b92a5]"}`}
           >
@@ -344,12 +351,12 @@ function Home({ userProfile, user }) {
         </div>
 
         {/* Right content — threads */}
-{showSidebar && (
-  <div
-    onClick={() => setShowSidebar(false)}
-    className="fixed inset-0 bg-black bg-opacity-60 z-30 md:hidden"
-  />
-)}
+        {showSidebar && (
+          <div
+            onClick={() => setShowSidebar(false)}
+            className="fixed inset-0 bg-black bg-opacity-60 z-30 md:hidden"
+          />
+        )}
         <div className="flex-1 px-6 py-8 overflow-y-auto bg-[#0f1117]">
           <div className="flex justify-between items-center mb-4">
             <div className="flex flex-col mb-2">
@@ -362,7 +369,7 @@ function Home({ userProfile, user }) {
                 (() => {
                   const currentRoom = rooms.find((r) => r.id === activeTab);
                   return currentRoom ? (
-                    <div className="flex items-center gap-3 mt-1">
+                    <div className="flex items-center gap-3 mt-1 overflow-x-auto whitespace-nowrap">
                       <p className="text-sm text-[#8b92a5]">
                         {currentRoom.members?.length || 0} member
                         {currentRoom.members?.length !== 1 ? "s" : ""}
@@ -442,14 +449,14 @@ function Home({ userProfile, user }) {
                   key={thread.id}
                   className="bg-[#1a1d27] border border-[#2a2d3a] rounded-2xl p-6 hover:border-blue-800 transition-colors duration-200"
                 >
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
                     <h3
                       onClick={() => navigate(`/thread/${thread.id}`)}
-                      className="text-lg font-bold text-[#e2e8f0] cursor-pointer hover:text-blue-400 transition-colors duration-200"
+                      className="text-lg font-bold text-[#e2e8f0] cursor-pointer hover:text-blue-400 transition-colors duration-200 min-w-0 break-words"
                     >
                       {thread.title}
                     </h3>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0 overflow-x-auto whitespace-nowrap">
                       {thread.pinned && (
                         <span className="text-xs bg-yellow-100 text-yellow-700 font-bold px-2 py-1 rounded-full">
                           📌 Pinned

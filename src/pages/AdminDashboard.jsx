@@ -60,8 +60,8 @@ function AdminDashboard({ userProfile }) {
         {loading ? (
           <p className="text-blue-400 font-bold">Loading users...</p>
         ) : (
-          <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-2xl overflow-hidden">
-            <table className="w-full">
+          <div className="bg-[#1a1d27] border border-[#2a2d3a] rounded-2xl overflow-x-auto">
+            <table className="w-full min-w-[700px]">
               <thead className="border-b border-[#2a2d3a]">
                 <tr>
                   <th className="text-left p-4 text-xs font-bold text-[#8b92a5] uppercase tracking-widest">

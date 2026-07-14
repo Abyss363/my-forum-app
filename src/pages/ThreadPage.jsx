@@ -152,7 +152,7 @@ function ThreadPage({ userProfile, user }) {
 
   return (
     <div className="min-h-screen bg-[#0f1117] flex flex-col">
-      <nav className="bg-[#1a1d27] border-b border-[#2a2d3a] px-6 py-4 flex justify-between items-center">
+      <nav className="bg-[#1a1d27] border-b border-[#2a2d3a] px-6 py-4 flex justify-between items-center gap-4 overflow-x-auto">
         <h1 className="text-xl font-bold tracking-widest uppercase bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
           🎓 AJU Forum
         </h1>
@@ -292,7 +292,7 @@ function ThreadPage({ userProfile, user }) {
                 >
                   👍 <span>{reply.upvotedBy?.length || 0}</span>
                 </button>
-                <div className="flex justify-between items-center text-xs text-[#4a5066] border-t border-[#2a2d3a] pt-3 mt-3 gap-2">
+                <div className="flex justify-between items-center text-xs text-[#4a5066] border-t border-[#2a2d3a] pt-3 mt-3 gap-2 flex-wrap">
                   <span>
                     <span
                       className={`font-bold ${
